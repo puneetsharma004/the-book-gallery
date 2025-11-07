@@ -162,7 +162,6 @@ export default function PublicProfilePage() {
               </AnimatePresence>
             </div>
           )}
-
       </div>
     </main>
   );
