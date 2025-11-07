@@ -8,6 +8,8 @@ import { uploadCoverImage } from "@/lib/upload";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { searchGoogleBooks } from "@/lib/googleBooks";
+import { motion } from "framer-motion";
 
 import {
   BookOpen,
@@ -29,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 import { useUserStore } from "@/lib/store/userStore";
 import { useBooksStore } from "@/lib/store/useBookStore";
+import Header from "../components/common/Header";
 
 
 
@@ -100,7 +103,7 @@ export default function UserPage() {
 
 
 
-  useEffect(() => {
+useEffect(() => {
   const q = searchQuery.trim();
   if (!q) {
     setSuggestions([]);
@@ -110,36 +113,59 @@ export default function UserPage() {
   const delay = setTimeout(async () => {
     setIsSuggesting(true);
     try {
-      const res = await fetch(
-        `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=10`
+      // === 1) Fetch OpenLibrary
+      const olRes = await fetch(
+        `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=8`
       );
-      const data = await res.json();
-      const raw = (data.docs || []).map((doc) => ({
+      const olData = await olRes.json();
+      const olSuggestions = (olData.docs || []).map((doc) => ({
         title: doc.title,
         author: doc.author_name?.[0] || "Unknown",
         cover: doc.cover_i
           ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-S.jpg`
           : null,
+        source: "openlibrary",
       }));
 
-      // ✅ Fuzzy rank the suggestions
-      const fuse = new Fuse(raw, {
-        keys: ["title", "author"],
-        threshold: 0.4, // lower → stricter match
+      // === 2) Fetch Google Books
+      const gbRes = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=8&key=${process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY}`
+      );
+      const gbData = await gbRes.json();
+      const gbSuggestions = (gbData.items || []).map((item) => ({
+        title: item.volumeInfo.title,
+        author: item.volumeInfo.authors?.join(", ") || "Unknown",
+        cover: item.volumeInfo.imageLinks?.thumbnail || null,
+        source: "google",
+      }));
+
+      // === 3) Combine + Remove Duplicates (by Title match)
+      const merged = [...olSuggestions, ...gbSuggestions];
+      const seen = new Set();
+      const unique = merged.filter((book) => {
+        const key = book.title.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
 
-      const fuzzyResults = fuse.search(q).map((r) => r.item);
+      // === 4) Fuzzy Rank
+      const fuse = new Fuse(unique, {
+        keys: ["title", "author"],
+        threshold: 0.35,
+      });
 
-      // Keep only first 10 results
-      setSuggestions(fuzzyResults.slice(0, 10));
+      const ranked = fuse.search(q).map((r) => r.item);
 
+      setSuggestions(ranked.slice(0, 10));
     } finally {
       setIsSuggesting(false);
     }
-  }, 300); // << Debounce 300ms
+  }, 300);
 
   return () => clearTimeout(delay);
 }, [searchQuery]);
+
 
 useEffect(() => {
   function handleClickOutside() {
@@ -277,24 +303,27 @@ useEffect(() => {
       const q = searchQuery.trim();
       if (!q) return;
 
-      // ✅ Hide suggestions when submitting search
       setSuggestions([]);
+      setIsSearching(true);
+      setSearchError("");
+      setSearchResults([]);
 
       try {
-        setIsSearching(true);
-        setSearchError("");
-        setSearchResults([]);
+        // 1) Fetch OpenLibrary
+        const olUrl = buildSearchUrl(q, searchType);
+        const olRes = await fetch(olUrl).then((r) => r.json()).catch(() => null);
+        const olDocs = Array.isArray(olRes?.docs) ? olRes.docs.map(mapDocToPreview) : [];
 
-        const url = buildSearchUrl(q, searchType);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Search failed");
+        // 2) Fetch Google
+        const googleDocs = await searchGoogleBooks(q);
 
-        const data = await res.json();
-        const docs = Array.isArray(data.docs) ? data.docs : [];
-        const mapped = docs.map(mapDocToPreview);
+        // 3) Merge & remove duplicates by title
+        const merged = [...olDocs, ...googleDocs].filter(
+          (v, i, a) =>
+            a.findIndex((t) => t.title.toLowerCase() === v.title.toLowerCase()) === i
+        );
 
-        setSearchResults(mapped);
-
+        setSearchResults(merged);
       } catch (err) {
         setSearchError("Could not fetch results. Please try again.");
         toast.error("Search failed");
@@ -323,39 +352,47 @@ useEffect(() => {
   }
 
   return (
-    <div className={`min-h-screen ${BG_COLOR}`}>
-      {/* HEADER */}
-      <header className="sticky top-0 z-10 w-full border-b bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className={`text-xl font-serif font-bold ${TEXT_COLOR}`}>
-            Welcome,{" "}
-            {user?.profile?.display_name || user?.profile?.username || "Reader"}!
-          </h1>
+   <div className="min-h-screen w-full bg-linear-to-br from-[#0a0f1f] via-[#121826] to-[#1e293b] p-8">
+ 
+       {/* HEADER */}
+      <header className="sticky top-0 z-20 w-full glass backdrop-blur-xl border-b rounded-2xl border-white/10 shadow-[0_6px_30px_rgba(0,0,0,0.4)]">
+  <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+    
+    <h1 className="text-lg md:text-2xl font-serif font-bold text-white">
+      Welcome, {user?.profile?.display_name || user?.profile?.username || "Reader"}!
+    </h1>
 
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/u/${user.profile.username}`)}
-              className="border-amber-400 text-amber-700 hover:bg-amber-100"
-            >
-              Share Profile
-            </Button>
+    {/* Right Buttons */}
+    <div className="flex gap-2 md:gap-4">
+      
+      <Button
+        variant="outline"
+        onClick={() => router.push(`/u/${user.profile.username}`)}
+        className="text-white border-white/30 hover:bg-white/10 hover:border-white/40 transition"
+      >
+        Share Profile
+      </Button>
 
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              className="border-stone-400 text-stone-700 hover:bg-stone-100"
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
+      <Button
+        variant="outline"
+        onClick={handleLogout}
+        className="text-white border-white/30 hover:bg-white/10 hover:border-white/40 transition"
+      >
+        Logout
+      </Button>
+
+    </div>
+  </div>
       </header>
+
+
+
 
       {/* MAIN */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* ======= SEARCH & IMPORT (OpenLibrary) ======= */}
-        <section className="mb-10 p-6 bg-white rounded-xl shadow-lg">
+        <section className="mb-10 p-6 glass rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-white/10">
+
           <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
             <h2 className={`text-xl font-semibold ${ACCENT_COLOR}`}>Search & Import</h2>
             <span className="text-sm text-stone-500">
@@ -372,48 +409,54 @@ useEffect(() => {
               placeholder="Search by title, author, or ISBN…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 border-stone-300 focus:border-amber-500"
+              className="h-12 pl-4 pr-4 bg-white/10 text-white placeholder-white/40 border border-white/20 focus:border-white/40 focus:ring-white/40 backdrop-blur-lg rounded-xl"
             />
 
-            {/* SUGGESTIONS LIST */}
-            {isSuggesting && (
-              <div className="absolute left-0 right-0 bg-white border border-stone-200 rounded-md shadow-md p-3 text-sm text-stone-500">
-                Searching…
-              </div>
-            )}
 
-            {!isSuggesting && suggestions.length > 0 && (
-              <div className="absolute z-20 w-full bg-white border border-stone-200 rounded-md shadow-md max-h-72 overflow-y-auto">
+            {/* SUGGESTIONS LIST */}
+            {suggestions.length > 0 && !isSuggesting && (
+              <ul className="absolute left-0 right-0 z-30 mt-2 bg-[#0f1629]/90 border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto divide-y divide-white/5">
                 {suggestions.map((s, i) => (
-                  <div
+                  <li
                     key={i}
+                    tabIndex={0}
+                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/10 focus:bg-white/10 transition-colors text-white"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSearchQuery(s.title);
                       setSuggestions([]);
-                      performSearch(); // Auto trigger search
-                      // searchInputRef.current?.blur();  // ✅ Hide keyboard & remove focus
-                      toast("Searching…", { icon: "🔎" });
+                      performSearch();
                     }}
-                    className="flex gap-3 items-center p-2 hover:bg-amber-50 cursor-pointer transition-colors"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setSearchQuery(s.title);
+                        setSuggestions([]);
+                        performSearch();
+                      }
+                    }}
                   >
                     {s.cover ? (
                       <img src={s.cover} className="w-8 h-10 rounded object-cover" />
                     ) : (
-                      <div className="w-8 h-10 bg-stone-200 rounded" />
+                      <div className="w-8 h-10 rounded bg-white/10" />
                     )}
 
                     <div>
-                      <p className="font-medium">{s.title}</p>
-                      <p className="text-xs text-stone-500">{s.author}</p>
+                      <p className="font-medium text-white">{s.title}</p>
+                      <p className="text-xs text-white/60">{s.author}</p>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
+
           </div>
 
-            <Button type="submit" className="h-10 bg-amber-700 hover:bg-amber-800 text-white">
+            <Button 
+                type="submit"
+                className="h-12 px-5 bg-white/10 text-white border border-white/20 hover:bg-white/20 transition rounded-xl backdrop-blur-md"
+              >
+
               {isSearching ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Searching
@@ -438,8 +481,8 @@ useEffect(() => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {searchResults.map((r) => (
-                <Card key={`${r.ol_key}-${r.isbn || r.title}`}>
-                  <CardContent className="p-4 flex gap-3">
+                <Card key={`${r.ol_key}-${r.isbn || r.title}`} className="glass border border-white/10 rounded-xl shadow-lg hover:shadow-xl transition-all">
+                  <CardContent className="p-4 flex gap-4 items-center">
                     <div className="w-16 h-20 bg-stone-200 rounded overflow-hidden flex-shrink-0">
                       {r.cover_url ? (
                         <img
@@ -485,14 +528,14 @@ useEffect(() => {
         </section>
 
         {/* ======= ADD BOOK (MANUAL) ======= */}
-        <section className="mb-10 p-6 bg-white rounded-xl shadow-lg flex justify-between items-center">
+        <section className="mb-10 p-6 glass rounded-2xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.35)] flex justify-between items-center">
           <h2 className={`text-xl font-semibold ${ACCENT_COLOR}`}>
             Add a Book Manually
           </h2>
 
           <Button
             onClick={() => setShowManualModal(true)}
-            className="bg-amber-700 hover:bg-amber-800 text-white"
+            className="bg-white/10 text-white border border-white/20 hover:bg-white/20 rounded-xl backdrop-blur-md"
           >
             + Add Book
           </Button>
@@ -500,464 +543,406 @@ useEffect(() => {
 
 
         {/* ======= LIBRARY FILTERS + SEARCH ======= */}
-        <div className="mb-4 max-w-md mx-auto">
+        <div className="mb-6 max-w-xl mx-auto relative">
           <Input
-            placeholder="Search within your library (title or notes)…"
+            placeholder="Search your library…"
             value={librarySearch}
             onChange={(e) => setLibrarySearch(e.target.value)}
-            className="h-10 border-stone-300 focus:border-amber-500"
+            className="h-12 pl-11 pr-4 w-full text-white placeholder-white/40 
+                      bg-white/10 border border-white/20 rounded-xl backdrop-blur-lg
+                      focus:border-white/40 focus:ring-white/30 transition-all"
           />
+
+          {/* Search Icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 3a7.5 7.5 0 006.15 12.65z" />
+          </svg>
         </div>
 
-        <div className="flex justify-center gap-2 mb-8">
-          {FILTERS.map(({ value, label, Icon }) => (
-            <Button
-              key={value}
-              variant={filter === value ? "default" : "outline"}
-              onClick={() => setFilter(value)}
-              className={
-                filter === value
-                  ? "bg-amber-700 hover:bg-amber-800 text-white"
-                  : "hover:bg-amber-100 border-amber-300 text-amber-700"
-              }
-            >
-              <Icon className="mr-2 h-4 w-4" />
-              {label}
-            </Button>
-          ))}
+
+        <div className="flex justify-center gap-3 mb-8 flex-wrap select-none">
+
+          {FILTERS.map(({ value, label, Icon }) => {
+            const isActive = filter === value;
+
+            return (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium
+                  transition-all duration-300 backdrop-blur-lg border 
+                  ${
+                    isActive
+                      ? "bg-white/20 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.25)] scale-[1.05]"
+                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+                  }
+                `}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
+
         </div>
+
 
         {/* ======= BOOK GRID ======= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <AnimatePresence>
-            {filteredBooks.length === 0 ? (
-              <div className="col-span-full text-center text-stone-500">
-                No books found.
-              </div>
-            ) : (
-              filteredBooks.map((book) => (
-                <BookCard
+        <AnimatePresence mode="popLayout">
+          {filteredBooks.length === 0 ? (
+            <div className="text-center text-white/50 py-16 text-sm">
+              No books found.
+            </div>
+          ) : (
+            <motion.div 
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              {filteredBooks.map((book, index) => (
+                <motion.div 
                   key={book.id}
-                  book={book}
-                  onDelete={handleDeleteBook}
-                  onUpdate={handleUpdateBook}
-                />
-              ))
-            )}
-          </AnimatePresence>
-        </div>
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: index * 0.05, type: "spring", stiffness: 160 }}
+                >
+                  <BookCard
+                    book={book}
+                    onDelete={handleDeleteBook}
+                    onUpdate={handleUpdateBook}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
 
         <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
-          {/* Gradient Header */}
-          <div className="bg-linear-to-r from-amber-500 to-amber-600 px-6 py-5">
-            <DialogHeader>
-              <DialogTitle className="text-white text-xl font-bold flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Add to Your Library
-              </DialogTitle>
-              <DialogDescription className="text-amber-50 text-sm mt-1">
-                Choose how you want to track this book
-              </DialogDescription>
-            </DialogHeader>
-          </div>
+          <AnimatePresence>
+            {showAddModal && (
+              <DialogContent
+                forceMount
+                className="max-w-md p-0 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl bg-white/10 shadow-[0_8px_50px_rgba(0,0,0,0.65)] text-white"
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 12 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                >
 
-          {selectedBook && (
-            <div className="p-6 space-y-6 bg-linear-to-br from-amber-100 to-orange-100">
-              {/* Enhanced Book Preview Card */}
-              <div className="flex gap-4 p-4 bg-linear-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-sm">
-                <div className="relative group flex-shrink-0">
-                  <img
-                    src={selectedBook.cover_url || "/placeholder-book.png"}
-                    alt={selectedBook.title}
-                    className="w-20 h-28 object-cover rounded-lg shadow-md group-hover:shadow-xl transition-shadow duration-300 border border-stone-200"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg text-stone-900 mb-1 line-clamp-2">
-                    {selectedBook.title}
-                  </h3>
-                  <p className="text-sm text-stone-600 mb-2 flex items-center gap-1">
-                    <Pencil className="h-3 w-3" />
-                    {selectedBook.author}
-                  </p>
-                  {selectedBook.year && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-white/80 text-amber-700 border border-amber-200">
-                      📅 {selectedBook.year}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Status Selection with Visual Cards */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-amber-600" />
-                  Reading Status
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { value: "reading", label: "Reading", icon: "📖", color: "blue" },
-                    { value: "want", label: "Want to Read", icon: "📝", color: "amber" },
-                    { value: "read", label: "Finished", icon: "✅", color: "green" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setModalStatus(option.value)}
-                      className={`
-                        relative p-4 rounded-xl border-2 transition-all duration-200
-                        flex flex-col items-center gap-2 text-center
-                        hover:scale-105 hover:shadow-md
-                        ${
-                          modalStatus === option.value
-                            ? `border-${option.color}-500 bg-${option.color}-50 shadow-md`
-                            : "border-stone-200 bg-white hover:border-amber-300"
-                        }
-                      `}
-                    >
-                      <span className="text-2xl">{option.icon}</span>
-                      <span className={`text-xs font-medium ${
-                        modalStatus === option.value ? "text-stone-900" : "text-stone-600"
-                      }`}>
-                        {option.label}
-                      </span>
-                      {modalStatus === option.value && (
-                        <CheckCircle className="absolute top-2 right-2 h-4 w-4 text-green-600" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Enhanced Notes Section */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-2 block flex items-center gap-2">
-                  <Pencil className="h-4 w-4 text-amber-600" />
-                  Personal Notes <span className="text-xs font-normal text-stone-500">(Optional)</span>
-                </label>
-                <div className="relative">
-                  <textarea
-                    className="w-full border-2 border-stone-200 rounded-xl p-3 text-sm resize-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition-all duration-200 bg-white hover:border-stone-300"
-                    placeholder="Add your thoughts, quotes, or reminders about this book..."
-                    value={modalNotes}
-                    onChange={(e) => setModalNotes(e.target.value)}
-                    rows={4}
-                  />
-                  <div className="absolute bottom-2 right-2 text-xs text-stone-400">
-                    {modalNotes.length}/500
+                  {/* HEADER */}
+                  <div className="p-5 border-b border-white/10 bg-white/5">
+                    <DialogHeader>
+                      <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+                        <Plus className="h-5 w-5 text-white/80" />
+                        Add to Library
+                      </DialogTitle>
+                      <DialogDescription className="text-white/50 text-sm">
+                        Confirm details & set your reading status.
+                      </DialogDescription>
+                    </DialogHeader>
                   </div>
+
+                  {/* CONTENT BODY */}
+                  {selectedBook && (
+                    <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto scrollbar-none">
+
+                      {/* COVER PREVIEW */}
+                      <div className="flex justify-center">
+                        <div className="relative">
+                          <img
+                            src={selectedBook.cover_url || "/placeholder-book.png"}
+                            alt={selectedBook.title}
+                            className="w-28 h-44 object-cover rounded-md shadow-xl"
+                          />
+                          <div className="absolute left-0 top-0 w-[6px] h-full bg-gradient-to-r from-white/25 to-transparent rounded-l-md" />
+                        </div>
+                      </div>
+
+                      {/* Title & Author */}
+                      <div className="text-center">
+                        <h2 className="font-semibold text-lg">{selectedBook.title}</h2>
+                        {selectedBook.author && (
+                          <p className="text-white/60 text-sm mt-1">{selectedBook.author}</p>
+                        )}
+                      </div>
+
+                      {/* STATUS SELECTOR */}
+                      <div>
+                        <label className="text-sm font-medium text-white/80 flex items-center gap-2 mb-2">
+                          <BookOpen className="h-4 w-4 text-white/60" />
+                          Reading Status
+                        </label>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { value: "reading", label: "Reading", icon: "📖" },
+                            { value: "want", label: "Want", icon: "📝" },
+                            { value: "read", label: "Finished", icon: "✅" },
+                          ].map((option) => (
+                            <button
+                              key={option.value}
+                              onClick={() => setModalStatus(option.value)}
+                              className={`p-3 rounded-md border backdrop-blur-md transition text-center
+                                ${
+                                  modalStatus === option.value
+                                    ? "bg-white/20 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.25)]"
+                                    : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                                }`}
+                            >
+                              <div className="text-lg">{option.icon}</div>
+                              <div className="text-[11px] mt-1">{option.label}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* NOTES */}
+                      <div>
+                        <label className="text-sm font-medium text-white/80 flex items-center gap-2 mb-2">
+                          <Pencil className="h-4 w-4 text-white/60" />
+                          Personal Notes
+                        </label>
+                        <textarea
+                          className="w-full p-3 rounded-md bg-white/5 border border-white/10 text-white placeholder-white/40 backdrop-blur-sm focus:border-white/40 focus:ring-white/20 transition resize-none"
+                          placeholder="Optional thoughts, quotes, or summaries..."
+                          value={modalNotes}
+                          onChange={(e) => setModalNotes(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+
+                    </div>
+                  )}
+
+                  {/* FOOTER */}
+                  <DialogFooter className="p-4 border-t border-white/10 flex gap-3 justify-end">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowAddModal(false)}
+                      className="text-white/70 hover:bg-white/10 hover:text-white rounded-md"
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      disabled={modalSubmitting}
+                      onClick={handleManualAddBook}
+                      className="bg-white/20 border border-white/40 hover:bg-white/30 text-white font-medium rounded-md px-6 transition"
+                    >
+                      {modalSubmitting ? "Adding..." : "Add Book"}
+                    </Button>
+                  </DialogFooter>
+
+                </motion.div>
+              </DialogContent>
+            )}
+          </AnimatePresence>
+        </Dialog>
+
+
+
+        <Dialog open={showManualModal} onOpenChange={(open) => {
+          setShowManualModal(open);
+          if (!open) {
+            setManualTitle("");
+            setManualNotes("");
+            setManualFile(null);
+            setManualPreview(null);
+          }
+        }}>
+          <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl bg-white/10 shadow-[0_8px_50px_rgba(0,0,0,0.6)]">
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 14 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 14 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="w-full text-white"
+            >
+
+              {/* Header */}
+              <div className="p-5 border-b border-white/10">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                    <Plus className="h-5 w-5 text-white/70" />
+                    Add Book Manually
+                  </DialogTitle>
+                  <DialogDescription className="text-white/50 text-sm">
+                    Create a custom entry for your library.
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+
+              <div className="p-6 space-y-6 max-h-[600px] overflow-y-auto">
+
+                {/* Book Title */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-white/60" />
+                    Book Title <span className="text-red-400">*</span>
+                  </label>
+                  <Input
+                    placeholder="Enter book title…"
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    className="h-11 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-xl backdrop-blur-lg focus:border-white/40 focus:ring-white/40 transition"
+                    required
+                  />
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Enhanced Footer */}
-          <DialogFooter className="px-6 py-4 bg-stone-50 border-t border-stone-200 flex-row gap-3 sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowAddModal(false)}
-              className="border-stone-300 hover:bg-stone-100 text-stone-700"
-            >
-              Cancel
-            </Button>
-            
-            <Button
-              className="bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 px-6 flex items-center gap-2"
-              onClick={async () => {
-                if (!selectedBook) return;
+                {/* Cover Upload */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 mb-3 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-white/60" />
+                    Cover Image <span className="text-xs text-white/40">(optional)</span>
+                  </label>
 
-                // ✅ Prevent duplicates
-                if (hasBook(selectedBook.title)) {
-                  toast.error("This book is already in your library 📚");
-                  return;
-                }
-
-                setModalSubmitting(true);
-
-                const p = (async () => {
-                  await addBookToStore({
-                    user_id: user.id,
-                    title: selectedBook.title,
-                    status: modalStatus,
-                    notes: modalNotes,
-                    cover_url: selectedBook.cover_url || null,
-                  });
-                })();
-
-                toast.promise(p, {
-                  loading: "Saving to your library…",
-                  success: `Added “${selectedBook.title}”`,
-                  error: "Could not save book",
-                });
-
-                try {
-                  await p;
-                  setShowAddModal(false);
-                } finally {
-                  setModalSubmitting(false);
-                }
-              }}
-            >
-              {modalSubmitting ? "Adding…" : "Add to Library"}
-            </Button>
-
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-
-      <Dialog open={showManualModal} onOpenChange={(open) => {
-      setShowManualModal(open);
-      if (!open) {
-        setManualTitle("");
-        setManualNotes("");
-        setManualFile(null);
-        setManualPreview(null);
-      }
-    }}>
-          <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
-            {/* Fixed Gradient Header - was "bg-linear-to-r" (wrong) */}
-            <div className="bg-linear-to-r from-amber-600 to-amber-700 px-6 py-5">
-              <DialogHeader>
-                <DialogTitle className="text-white text-xl font-bold flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  Add Book Manually
-                </DialogTitle>
-                <DialogDescription className="text-amber-100 text-sm mt-1">
-                  Create a custom entry for your library
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-
-            <div className="p-6 space-y-6 bg-white max-h-[600px] overflow-y-auto">
-              {/* Book Title Input */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-2 block flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-amber-600" />
-                  Book Title <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="Enter the book title..."
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  className="h-11 border-2 border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition-all"
-                  required
-                />
-              </div>
-
-              {/* Cover Image Upload with Preview */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-3 block flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-amber-600" />
-                  Cover Image <span className="text-xs font-normal text-stone-500">(Optional)</span>
-                </label>
-
-                {/* Preview Area */}
-                {manualPreview ? (
-                  <div className="relative group">
-                    <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 border-amber-200">
+                  {manualPreview ? (
+                    <div className="flex gap-4 p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
                       <div className="relative">
                         <img
                           src={manualPreview}
-                          alt="Book cover preview"
-                          className="w-32 h-44 object-cover rounded-lg shadow-lg border-2 border-white"
+                          alt="Cover preview"
+                          className="w-28 h-40 object-cover rounded-xl shadow-lg"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-lg" />
+                        <div className="absolute left-0 top-0 w-[6px] h-full bg-gradient-to-r from-white/40 to-transparent rounded-l-lg" />
                       </div>
-                      
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-stone-700 mb-2">
-                          📚 Cover Preview
-                        </p>
-                        <p className="text-xs text-stone-500 mb-3">
-                          {manualFile?.name}
-                        </p>
+
+                      <div className="flex flex-col justify-center gap-2 text-white/80">
+                        <span className="text-sm">{manualFile?.name}</span>
                         <Button
-                          type="button"
+                          variant="ghost"
                           size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setManualFile(null);
-                            setManualPreview(null);
-                          }}
-                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          onClick={() => { setManualFile(null); setManualPreview(null); }}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg"
                         >
-                          <X className="h-4 w-4 mr-1" />
-                          Remove Image
+                          <X className="h-4 w-4 mr-1" /> Remove
                         </Button>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  // Modern Drag & Drop Upload Area
-                  <div
-                    onClick={() => document.getElementById('cover-upload').click()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files[0];
-                      if (file && file.type.startsWith('image/')) {
-                        setManualFile(file);
-                        const reader = new FileReader();
-                        reader.onloadend = () => setManualPreview(reader.result);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    className="border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-8 text-center cursor-pointer hover:border-amber-500 hover:bg-amber-100/50 transition-all duration-300 group"
-                  >
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all">
-                        <Upload className="h-8 w-8 text-amber-600" />
-                      </div>
-                      
-                      <div>
-                        <p className="font-semibold text-stone-700 mb-1">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-sm text-stone-500">
-                          PNG, JPG, GIF up to 5MB
-                        </p>
-                      </div>
-
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="border-amber-400 text-amber-700 hover:bg-amber-100 mt-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          document.getElementById('cover-upload').click();
-                        }}
-                      >
-                        <ImageIcon className="h-4 w-4 mr-2" />
-                        Browse Files
-                      </Button>
-                    </div>
-
-                    <input
-                      type="file"
-                      id="cover-upload"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
+                  ) : (
+                    <div
+                      onClick={() => document.getElementById("cover-upload").click()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file?.type.startsWith("image/")) {
                           setManualFile(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setManualPreview(reader.result);
-                          reader.readAsDataURL(file);
+                          const r = new FileReader();
+                          r.onloadend = () => setManualPreview(r.result);
+                          r.readAsDataURL(file);
                         }
                       }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Reading Status - Visual Cards */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-3 block flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-amber-600" />
-                  Reading Status
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { value: "reading", label: "Reading", icon: "📖", color: "blue", bg: "bg-blue-50", border: "border-blue-500" },
-                    { value: "want", label: "Want to Read", icon: "📝", color: "amber", bg: "bg-amber-50", border: "border-amber-500" },
-                    { value: "read", label: "Finished", icon: "✅", color: "green", bg: "bg-green-50", border: "border-green-500" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setManualStatus(option.value)}
-                      className={`
-                        relative p-4 rounded-xl border-2 transition-all duration-200
-                        flex flex-col items-center gap-2 text-center
-                        hover:scale-105 hover:shadow-md
-                        ${
-                          manualStatus === option.value
-                            ? `${option.border} ${option.bg} shadow-md`
-                            : "border-stone-200 bg-white hover:border-amber-300"
-                        }
-                      `}
+                      onDragOver={(e) => e.preventDefault()}
+                      className="border border-white/20 bg-white/5 rounded-xl p-10 text-center backdrop-blur-lg cursor-pointer hover:bg-white/10 transition"
                     >
-                      <span className="text-2xl">{option.icon}</span>
-                      <span className={`text-xs font-medium ${
-                        manualStatus === option.value ? "text-stone-900" : "text-stone-600"
-                      }`}>
-                        {option.label}
-                      </span>
-                      {manualStatus === option.value && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <Upload className="mx-auto h-8 w-8 mb-3 text-white/60" />
+                      <p className="text-white/70">Click to upload or drag here</p>
 
-              {/* Notes Textarea */}
-              <div>
-                <label className="text-sm font-semibold text-stone-700 mb-2 block flex items-center gap-2">
-                  <Pencil className="h-4 w-4 text-amber-600" />
-                  Personal Notes <span className="text-xs font-normal text-stone-500">(Optional)</span>
-                </label>
-                <div className="relative">
+                      <input
+                        type="file"
+                        id="cover-upload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setManualFile(file);
+                            const r = new FileReader();
+                            r.onloadend = () => setManualPreview(r.result);
+                            r.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Options */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-white/60" />
+                    Reading Status
+                  </label>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: "reading", label: "Reading", icon: "📖" },
+                      { value: "want", label: "Want", icon: "📝" },
+                      { value: "read", label: "Finished", icon: "✅" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setManualStatus(option.value)}
+                        className={`p-4 rounded-xl text-center border backdrop-blur-sm transition
+                          ${
+                            manualStatus === option.value
+                              ? "bg-white/15 border-white/40 text-white shadow-[0_0_20px_rgba(255,255,255,0.25)] scale-[1.05]"
+                              : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                          }`}
+                      >
+                        <span className="text-2xl">{option.icon}</span>
+                        <span className="text-xs block mt-1">{option.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 mb-2 flex items-center gap-2">
+                    <Pencil className="h-4 w-4 text-white/60" />
+                    Notes <span className="text-xs text-white/40">(optional)</span>
+                  </label>
+
                   <textarea
-                    className="w-full border-2 border-stone-200 rounded-xl p-4 text-sm resize-none focus:border-amber-400 focus:ring-2 focus:ring-amber-200 transition-all duration-200 bg-white hover:border-stone-300"
-                    placeholder="Add your thoughts, favorite quotes, or reminders about this book..."
                     value={manualNotes}
                     onChange={(e) => setManualNotes(e.target.value)}
                     rows={4}
                     maxLength={500}
+                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/40 backdrop-blur-sm focus:border-white/40 focus:ring-white/30 transition resize-none"
+                    placeholder="Thoughts, quotes, reflections..."
                   />
-                  <div className="absolute bottom-3 right-3 text-xs text-stone-400 bg-white/90 px-2 py-1 rounded">
-                    {manualNotes.length}/500
-                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Enhanced Footer with proper opacity */}
-            <DialogFooter className="px-6 py-4 bg-stone-50 border-t border-stone-200 flex-row gap-3 sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowManualModal(false);
-                  setManualPreview(null);
-                  setManualFile(null);
-                }}
-                className="border-stone-300 hover:bg-stone-100 text-stone-700 font-medium"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
+              {/* Footer */}
+              <DialogFooter className="p-4 border-t border-white/10 flex gap-3 justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowManualModal(false)}
+                  className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg"
+                >
+                  Cancel
+                </Button>
 
-              <Button
-                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={manualSubmitting || !manualTitle.trim()}
-                onClick={handleManualAddBook}
-              >
-                {manualSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Adding Book...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add to Library
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
+                <Button
+                  disabled={manualSubmitting || !manualTitle.trim()}
+                  onClick={handleManualAddBook}
+                  className="bg-white/15 border border-white/30 text-white hover:bg-white/20 rounded-lg px-6 backdrop-blur-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {manualSubmitting ? "Adding…" : "Add Book"}
+                </Button>
+              </DialogFooter>
+
+            </motion.div>
+
           </DialogContent>
         </Dialog>
+
 
 
 

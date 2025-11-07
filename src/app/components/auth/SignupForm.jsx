@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,156 +11,150 @@ import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { useToaster } from "react-hot-toast";
 
 const signupSchema = z.object({
-  username: z.string()
-    .min(3, { message: "Username must be at least 3 characters." })
-    .max(20, { message: "Username cannot exceed 20 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  username: z.string().min(3, "Username must be at least 3 characters."),
+  email: z.string().email("Invalid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
 export default function SignupForm() {
   const router = useRouter();
+  const { toast } = useToaster();
+
+  const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(signupSchema),
-  });
+  } = useForm({ resolver: zodResolver(signupSchema) });
 
   const onSubmit = async ({ username, email, password }) => {
     setIsLoading(true);
-    setError("");
 
     try {
-      // ✅ Check if username is already taken
-      const { data: existingUser } = await supabase
+      // Check username availability
+      const { data: existing } = await supabase
         .from("users")
         .select("username")
         .eq("username", username)
         .single();
 
-      if (existingUser) {
-        setError("This username is already taken. Try another.");
+      if (existing) {
+        toast({
+          title: "Username Taken",
+          description: "Try a different username.",
+          variant: "destructive",
+        });
         setIsLoading(false);
         return;
       }
 
-      // ✅ Create auth account
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (signupError) throw signupError;
+      // Create account
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
 
-      const user = signupData.user;
+      const user = data.user;
 
-      // ✅ Immediately sign in (bypasses email-confirmation requirement)
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (signInError) throw signInError;
+      // Sign in immediately after
+      await supabase.auth.signInWithPassword({ email, password });
 
-      // ✅ Insert profile row into `users` table
+      // Insert profile
       await supabase.from("users").insert({
         id: user.id,
         email,
         username,
         display_name: username,
         bio: "",
-        avatar_url: null,
       });
 
-      // ✅ Redirect to dashboard (same behavior your current working code has)
-      router.push("/");
+      toast({ title: "Account Created 🎉", description: "Welcome to The Book Gallery!" });
 
+      router.push("/user");
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      toast({
+        title: "Signup Failed",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
-      {/* Username Field */}
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+      {/* Username */}
+      <div>
+        <Label className="text-white/80">Username</Label>
         <Input
-          id="username"
-          placeholder="Choose a username"
-          type="text"
-          disabled={isLoading}
+          placeholder="yourname"
           {...register("username")}
+          disabled={isLoading}
+          className="bg-white/10 border-white/20 text-white placeholder-white/40
+                     focus:border-white/40 focus:ring-white/30 transition-all"
         />
-        {errors.username && (
-          <p className="text-sm font-medium text-red-500">{errors.username.message}</p>
-        )}
+        {errors.username && <p className="text-red-400 text-xs mt-1">{errors.username.message}</p>}
       </div>
 
-      {/* Email Field */}
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      {/* Email */}
+      <div>
+        <Label className="text-white/80">Email</Label>
         <Input
-          id="email"
           placeholder="you@example.com"
           type="email"
-          disabled={isLoading}
           {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-sm font-medium text-red-500">{errors.email.message}</p>
-        )}
-      </div>
-
-      {/* Password Field */}
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          placeholder="••••••••"
-          type="password"
           disabled={isLoading}
-          {...register("password")}
+          className="bg-white/10 border-white/20 text-white placeholder-white/40
+                     focus:border-white/40 focus:ring-white/30 transition-all"
         />
-        {errors.password && (
-          <p className="text-sm font-medium text-red-500">{errors.password.message}</p>
-        )}
+        {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
       </div>
 
-      {/* Error Box */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Registration Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {/* Password with Toggle */}
+      <div>
+        <Label className="text-white/80">Password</Label>
+        <div className="relative">
+          <Input
+            type={showPass ? "text" : "password"}
+            placeholder="••••••••"
+            {...register("password")}
+            disabled={isLoading}
+            className="bg-white/10 border-white/20 text-white placeholder-white/40
+                       focus:border-white/40 focus:ring-white/30 transition-all pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPass(!showPass)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+          >
+            {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>}
+      </div>
 
       {/* Submit */}
-      <Button 
-        type="submit" 
-        className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
+      <Button
+        type="submit"
         disabled={isLoading}
+        className="w-full bg-white/20 border border-white/30 text-white hover:bg-white/30 transition rounded-md"
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating Account...
+            <Loader2 className="animate-spin h-4 w-4 mr-2" />
+            Creating…
           </>
         ) : (
-          "Sign Up"
+          "Create Account"
         )}
       </Button>
+
     </form>
   );
 }

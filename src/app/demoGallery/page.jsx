@@ -97,29 +97,22 @@ export default function DemoGalleryPage() {
 
 
   return (
-    <main className="min-h-screen bg-neutral-50 p-6">
-      <div className="max-w-5xl mx-auto py-8">
-        
-        {/* --- Header & Title --- */}
-        <header className="text-center mb-10 bg-white p-6 rounded-xl shadow-lg border border-neutral-100">
-            {/* Back to landing page link */}
-            <div className="flex justify-between items-center mb-4">
-                <Link href="/" passHref>
-                    <Button variant="ghost" className="text-neutral-600 hover:text-blue-600">
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Landing Page
-                    </Button>
-                </Link>
-                {/* Space for right side content if needed, kept empty for centering */}
-                <div className="w-24"></div> 
-            </div>
+    <main className="min-h-screen w-full bg-gradient-to-br from-[#0a0f1f] via-[#121826] to-[#1e293b] p-8">
+      <div className="max-w-5xl mx-auto py-6">
 
-          <h1 className="text-4xl font-extrabold text-neutral-900 mb-2">
-            📚 {username}'s Book Gallery
+        {/* Top Header */}
+        <header className="text-center mb-10">
+          <h1 className="text-4xl font-serif font-bold text-white drop-shadow-sm">
+            📚 Demo Book Gallery
           </h1>
-          <p className="text-lg text-neutral-600">
-            A real-time look at how your public profile will appear.
+          <p className="text-white/70 mt-1 text-lg">
+            Experience how your public reading profile will look.
           </p>
+
+          <Link href="/" className="inline-flex mt-6 items-center text-white/70 hover:text-amber-300 transition">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
         </header>
 
         {/* --- Filter Section --- */}
@@ -127,25 +120,24 @@ export default function DemoGalleryPage() {
           <h2 id="filter-heading" className="sr-only">
             Filter books by status
           </h2>
-          <div 
-            className="flex flex-wrap gap-3 justify-center"
-            role="tablist"
-            aria-label="Book status filters"
-          >
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
             {FILTERS.map(({ value, label, Icon }) => (
-              <Button
+              <button
                 key={value}
-                variant={filter === value ? "default" : "outline"}
                 onClick={() => setFilter(value)}
-                role="tab"
-                aria-selected={filter === value}
-                className={`transition-all ${filter === value ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'hover:bg-neutral-100'}`}
+                className={`px-4 py-2 rounded-full border backdrop-blur-md transition
+                ${
+                  filter === value
+                    ? "bg-white/20 border-white/50 text-white shadow"
+                    : "bg-white/5 border-white/20 text-white/70 hover:text-white hover:bg-white/10"
+                }`}
               >
-                <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+                <Icon className="inline h-4 w-4 mr-1" />
                 {label} ({filterCounts[value]})
-              </Button>
+              </button>
             ))}
           </div>
+
         </section>
 
         {/* --- Content Grid --- */}
@@ -154,54 +146,31 @@ export default function DemoGalleryPage() {
             const status = STATUS_DETAILS[book.status] || STATUS_DETAILS.reading;
             
             return (
-              <Card 
-                key={book.id} 
-                className="rounded-xl shadow-md transition-shadow hover:shadow-lg flex flex-col h-full"
-              >
-                <CardHeader className="pb-3 space-y-2">
-                  <h2 className="font-semibold text-lg line-clamp-2 text-neutral-800">
-                    {book.title}
-                  </h2>
-                  <Badge 
-                    className={`w-fit text-sm font-medium ${status.className}`}
-                  >
-                    <status.icon className="mr-1 h-3 w-3" aria-hidden="true" />
-                    {status.label}
-                  </Badge>
-                </CardHeader>
-                
-                <CardContent className="space-y-3 flex-1">
-                  {/* Book Cover */}
-                  {book.cover && book.cover !== "N/A" ? (
-                    <img
-                      src={book.cover}
-                      alt={`Cover of ${book.title}`}
-                      className="w-full h-48 object-cover rounded-md shadow-sm"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div 
-                      className="w-full h-48 bg-neutral-100 border border-dashed border-neutral-300 rounded-md flex items-center justify-center text-neutral-500 text-sm"
-                      role="img"
-                      aria-label={`No cover image available for ${book.title}`}
-                    >
-                      No cover available
-                    </div>
-                  )}
+              <Card className="rounded-xl bg-white/5 border border-white/10 backdrop-blur-lg shadow-lg hover:shadow-[0_0_25px_rgba(255,255,255,0.08)] transition-all overflow-hidden">
+                <div className="relative">
+                  <img
+                    src={book.cover}
+                    alt={book.title}
+                    className="w-full h-48 object-cover opacity-90 hover:opacity-100 transition"
+                  />
+                </div>
 
-                  {/* Notes */}
-                  {book.notes && (
-                    <p className="text-sm mt-2 text-neutral-700 line-clamp-3">
-                      <strong className="font-medium text-neutral-800">Notes:</strong> {book.notes}
-                    </p>
+                <div className="p-4 space-y-3">
+                  <h3 className="text-white font-semibold line-clamp-2">{book.title}</h3>
+
+                  <Badge className={`inline-flex items-center ${STATUS_DETAILS[book.status].className}`}>
+
+                    {STATUS_DETAILS[book.status].label}
+                  </Badge>
+
+                  {book.notes ? (
+                    <p className="text-white/70 text-sm line-clamp-3 leading-relaxed">{book.notes}</p>
+                  ) : (
+                    <p className="text-white/40 italic text-sm">No notes added.</p>
                   )}
-                  {!book.notes && book.status !== 'want' && (
-                     <p className="text-sm italic text-neutral-500">
-                        No public notes available for this entry.
-                    </p>
-                  )}
-                </CardContent>
+                </div>
               </Card>
+
             );
           })}
         </div>

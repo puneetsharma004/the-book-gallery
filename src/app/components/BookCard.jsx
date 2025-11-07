@@ -20,10 +20,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 // Icons
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, BookOpen, Pencil } from "lucide-react";
 
 // --- Configuration (Kept as provided) ---
 
@@ -72,14 +73,17 @@ const cover = book.cover_url || book.cover || null;
         variants={cardVariants}
         initial="hidden"
         animate="visible"
+        whileHover={{ scale: 1.03, rotateY: 4 }}
+        transition={{ type: "spring", stiffness: 180, damping: 12 }}
         exit="exit"
         className="h-full"
       >
-        <Card 
-          className="relative h-full shadow-md hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer focus-within:ring-2 focus-within:ring-amber-500 rounded-lg"
-          role="group"
-          aria-labelledby={`book-title-${book.id}`}
-        >
+          <Card 
+            className="relative glass rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)]
+            hover:shadow-[0_12px_45px_rgba(0,0,0,0.55)] transition-all duration-500 overflow-hidden"
+            role="group"
+          >
+
           
           {/* Dialog Trigger wraps the entire visible card content for a large click target */}
           <DialogTrigger asChild>
@@ -89,19 +93,16 @@ const cover = book.cover_url || book.cover || null;
               aria-label={`View details and edit status for ${book.title}`}
             >
               <CardHeader className="pb-3 pr-10">
-                <h3 id={`book-title-${book.id}`} className="font-semibold text-lg line-clamp-2 text-neutral-800">
-                  {book.title}
-                </h3>
+                <h3 className="font-semibold text-white leading-tight">{book.title}</h3>
                 {isFetching ? (
                   <div className="absolute top-3 right-3 flex items-center text-blue-500">
                     <Loader2 className="h-5 w-5 animate-spin" aria-label="Fetching cover..." />
                   </div>
                 ) : (
-                  <Badge 
-                    className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium ${statusClass}`}
-                  >
+                  <Badge className={`px-2 py-0.5 text-xs rounded-full shadow-lg ${statusClass}`}>
                     {statusLabel}
                   </Badge>
+
                 )}
               </CardHeader>
 
@@ -112,12 +113,18 @@ const cover = book.cover_url || book.cover || null;
                 <div className="relative group">
                   <img
                     src={cover}
-                    alt={`Cover of ${book.title}`}
-                    className="w-full h-48 object-cover rounded-md shadow-md transition-transform duration-300 group-hover:scale-[1.04]"
-                    loading="lazy"
+                    alt={book.title}
+                    className="w-full h-[260px] object-cover rounded-lg transition-transform duration-500 group-hover:scale-[1.05]"
                   />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-md" />
+
+
+                   {/* Book Spine */}
+                    <div className="absolute left-0 top-0 w-[7px] h-full book-spine rounded-l-lg"></div>
+
+                  {/* Subtle hover highlight */}
+                  <div className="absolute inset-0 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </div>
+
               ) : (
                 <div className="w-full h-48 rounded-md border border-stone-200 bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-stone-400 text-sm">
                   {isFetching ? (
@@ -132,88 +139,130 @@ const cover = book.cover_url || book.cover || null;
                 </div>
               )}
 
-
+              <h3 className="font-semibold text-white line-clamp-2">{book.title}</h3>
                 
-                <p className="text-sm text-neutral-600 mt-2 line-clamp-1">
-                    Notes: {book.notes ? book.notes.split('\n')[0] : 'No notes added.'}
-                </p>
+               <p className="text-xs text-white/60">
+                Notes: {book.notes ? book.notes.split('\n')[0] : 'No notes yet.'}
+              </p>
+
               </CardContent>
             </button>
           </DialogTrigger>
 
           {/* Book Detail Modal */}
           <DialogContent
-            className="sm:max-w-[425px] bg-white shadow-2xl" 
-            aria-describedby="dialog-description"
-            onOpenAutoFocus={(e) => {
-              e.preventDefault();
-              const textarea = e.currentTarget.querySelector('#notes-modal-input');
-              textarea?.focus();
-            }}
+            forceMount
+            className="max-w-md p-0 overflow-hidden rounded-2xl border border-white/10 backdrop-blur-xl bg-white/10 shadow-[0_8px_50px_rgba(0,0,0,0.65)] text-white"
           >
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-neutral-900">{book.title}</DialogTitle>
-              <DialogDescription id="dialog-description">
-                Update the status and add personal notes for this book.
-              </DialogDescription>
-            </DialogHeader>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
 
-            <div className="space-y-4 mt-4">
-              {/* Status Select in Modal */}
-              <div>
-                <Label htmlFor={`modal-status-${book.id}`} className="font-semibold text-neutral-700">
-                  Reading Status
-                </Label>
-                <Select
-                  value={book.status}
-                  onValueChange={(value) => onUpdate(book.id, "status", value)}
-                >
-                  <SelectTrigger 
-                    id={`modal-status-${book.id}`}
-                    className="w-full mt-1 bg-white"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  
-                  {/* 🚨 FIX APPLIED HERE: Added bg-white and shadow-lg to SelectContent */}
-                  <SelectContent className="bg-white shadow-lg border">
-                    {STATUS_OPTIONS.map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
+              {/* HEADER */}
+              <div className="p-5 border-b border-white/10 bg-white/5">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-semibold">
+                    {book.title}
+                  </DialogTitle>
+                  {book.author && (
+                    <DialogDescription className="text-white/50 text-sm">
+                      {book.author}
+                    </DialogDescription>
+                  )}
+                </DialogHeader>
+              </div>
+
+              {/* BODY */}
+              <div className="p-6 space-y-6 max-h-[65vh] overflow-y-auto scrollbar-none">
+
+                {/* HERO COVER */}
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <img
+                      src={book.cover_url || "/placeholder-book.png"}
+                      alt={book.title}
+                      className="w-28 h-44 object-cover rounded-md shadow-xl"
+                    />
+                    <div className="absolute left-0 top-0 w-[6px] h-full bg-gradient-to-r from-white/25 to-transparent rounded-l-md" />
+                  </div>
+                </div>
+
+                {/* STATUS SELECTOR — Segmented Glass */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 flex items-center gap-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-white/60" />
+                    Reading Status
+                  </label>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: "reading", label: "Reading", icon: "📖" },
+                      { value: "want", label: "Want", icon: "📝" },
+                      { value: "read", label: "Finished", icon: "✅" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => onUpdate(book.id, "status", option.value)}
+                        className={`p-3 rounded-md border backdrop-blur-md transition text-center
+                          ${
+                            book.status === option.value
+                              ? "bg-white/20 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.25)]"
+                              : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                          }`}
+                      >
+                        <div className="text-lg">{option.icon}</div>
+                        <div className="text-[11px] mt-1">{option.label}</div>
+                      </button>
                     ))}
-                  </SelectContent>
-                  
-                </Select>
+                  </div>
+                </div>
+
+                {/* NOTES */}
+                <div>
+                  <label className="text-sm font-medium text-white/80 flex items-center gap-2 mb-2">
+                    <Pencil className="h-4 w-4 text-white/60" />
+                    Personal Notes
+                  </label>
+
+                  <textarea
+                    id="notes-modal-input"
+                    value={book.notes}
+                    onChange={(e) => onUpdate(book.id, "notes", e.target.value)}
+                    rows={4}
+                    className="w-full p-3 rounded-md bg-white/5 border border-white/10 text-white placeholder-white/40 backdrop-blur-sm focus:border-white/40 focus:ring-white/20 transition resize-none"
+                    placeholder="Write your thoughts, summaries, or favorite highlights..."
+                  />
+                </div>
+
               </div>
 
-              {/* Notes Textarea */}
-              <div>
-                <Label htmlFor={`notes-modal-input`} className="font-semibold text-neutral-700">
-                  Your Notes
-                </Label>
-                <textarea
-                  id={`notes-modal-input`}
-                  className="w-full border border-neutral-300 rounded-md p-3 h-32 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-shadow"
-                  placeholder="Add your thoughts about the book, chapter summaries, or quotes..."
-                  value={book.notes}
-                  onChange={(e) => onUpdate(book.id, "notes", e.target.value)}
-                  aria-label={`Notes for ${book.title}`}
-                />
-              </div>
+              {/* FOOTER */}
+              <DialogFooter className="p-4 border-t border-white/10 flex gap-3 justify-end">
 
-              {/* Delete Button in Modal (The primary delete trigger) */}
-              <Button
-                variant="destructive"
-                onClick={() => onDelete(book.id, book.title)}
-                className="w-full bg-red-600 hover:bg-red-700"
-                aria-label={`Permanently delete ${book.title} from your collection`}
-              >
-                <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                Delete Book
-              </Button>
-            </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => onDelete(book.id, book.title)}
+                  className="text-red-300 hover:text-red-200 hover:bg-red-400/10 rounded-md"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+
+                <Button
+                  onClick={() => onOpenChange(false)}
+                  className="bg-white/15 border border-white/30 text-white hover:bg-white/20 rounded-md px-5"
+                >
+                  Done
+                </Button>
+
+              </DialogFooter>
+
+            </motion.div>
           </DialogContent>
+
         </Card>
       </motion.div>
     </Dialog>

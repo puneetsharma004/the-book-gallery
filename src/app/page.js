@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button"; 
 import { Card } from "@/components/ui/card";
 import { BookOpen, Share2, Search, Zap, Heart, Pencil } from "lucide-react"; 
+import { useEffect } from "react";
 
 // --- Configuration & Placeholders ---
 
@@ -40,113 +41,100 @@ const cardStagger = {
 };
 
 
+
 export default function LandingPage() {
+  useEffect(() => {
+    const elements = document.querySelectorAll(".fade-in-section");
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("is-visible");
+        });
+      },
+      { threshold: 0.15 }
+    );
+    elements.forEach((el) => obs.observe(el));
+    return () => elements.forEach((el) => obs.unobserve(el));
+  }, []);
   return (
-    <div className={`min-h-screen flex flex-col ${BG_COLOR} ${TEXT_INK}`} aria-label="The Book Gallery Landing Page">
+    <div className="min-h-screen flex flex-col bg-[#0b0f17] text-white" aria-label="The Book Gallery Landing Page">
       
       {/* --- 1. HERO SECTION --- */}
       <motion.section 
-        initial="hidden"
-        animate="visible"
-        variants={cardStagger}
-        className="relative pt-32 pb-40 px-4 sm:px-8 lg:px-16 overflow-hidden max-w-7xl mx-auto"
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
       >
-        <div className="text-center max-w-4xl mx-auto z-10 relative">
+        {/* Background — very soft animated vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#1a1f2b,_#0b0f17)] opacity-95"></div>
+        <div className="absolute inset-0 pointer-events-none opacity-[0.15] bg-[url('/grain.png')] mix-blend-overlay"></div>
+
+        <div className="relative max-w-4xl text-center px-6 z-10">
           <motion.h1 
-            variants={fadeIn}
-            className="text-6xl sm:text-7xl font-serif font-extrabold tracking-tight mb-6 leading-tight"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-5xl sm:text-6xl font-serif font-bold text-white leading-tight"
           >
-            Your Story Starts Here
+            Show Who You Are<br />
+            By What You Read.
           </motion.h1>
-          
+
           <motion.p 
-            variants={{ ...fadeIn, visible: { ...fadeIn.visible, transition: { duration: 0.6, delay: 0.2 } } }}
-            className="text-xl sm:text-2xl text-stone-600 max-w-3xl mx-auto mb-10"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: "easeOut" }}
+            className="text-lg sm:text-2xl text-white/70 mt-6 max-w-2xl mx-auto"
           >
-            A calm space to honor your reading journey, document insights, and connect your favorite books to your identity.
+            A bookshelf worth sharing.  
+            A space where your reading journey becomes part of your identity.
           </motion.p>
 
-          <motion.div 
-            variants={{ ...fadeIn, visible: { ...fadeIn.visible, transition: { duration: 0.6, delay: 0.4 } } }}
-            className="flex justify-center gap-4"
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-10 flex flex-wrap justify-center gap-4"
           >
-            {/* Primary CTA */}
-            <Link href="/signup" passHref>
-              <Button 
-                size="lg" 
-                className="bg-stone-900 hover:bg-stone-700 text-white text-lg py-7 px-8 transition-colors shadow-xl"
-              >
-                Create Your Library
+            <Link href="/signup">
+              <Button className="px-8 py-6 text-lg bg-white text-black hover:bg-white/80 rounded-full">
+                Start Your Library
               </Button>
             </Link>
-            {/* Secondary CTA */}
-            <Link href="/demoGallery" passHref>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-stone-400 text-stone-700 hover:bg-stone-100 text-lg py-7 px-8"
-              >
+
+            <Link href="/demoGallery">
+              <Button variant="outline" className="px-8 py-6 text-lg border-white/40 text-white hover:bg-white/10 rounded-full">
                 View Demo Gallery
               </Button>
             </Link>
           </motion.div>
         </div>
 
-        {/* Floating Book Covers Visual */}
-        {HERO_BOOKS.map((book, index) => (
-          <motion.img
-            key={book.id}
-            initial={{ opacity: 0, scale: 0.5, rotate: book.rotate.includes('-') ? -10 : 10 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 + index * 0.15 }}
-            src={book.cover}
-            alt={book.title}
-            className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-48 object-cover shadow-2xl rounded-sm transition-transform duration-500 ease-out 
-              ${index === 0 ? 'sm:left-[15%] lg:left-[25%] -translate-y-[20%] w-32' : ''}
-              ${index === 1 ? 'sm:right-[15%] lg:right-[25%] translate-y-[10%] w-40' : ''}
-              ${index === 2 ? 'sm:top-[70%] sm:left-[30%] lg:top-[60%] lg:left-[40%] w-28 opacity-70 hidden sm:block' : ''}
-              ${book.rotate}`}
-            style={{ zIndex: 0 }}
-          />
-        ))}
+        {/* Parallax Book Covers */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          transition={{ delay: 1.2, duration: 1 }}
+          className="absolute inset-0 pointer-events-none"
+        >
+          {HERO_BOOKS.map((book, i) => (
+            <motion.img
+              key={book.id}
+              src={book.cover}
+              alt={book.title}
+              className="absolute w-40 object-cover rounded shadow-2xl opacity-70"
+              style={{ top: `${30 + i * 15}%`, left: `${20 + i * 25}%` }}
+              animate={{
+                y: [0, -10, 0],
+                rotate: [0, book.rotate.includes("-") ? -4 : 4, 0],
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            />
+          ))}
+        </motion.div>
       </motion.section>
-
-      <hr className="w-full border-t border-stone-200" />
-
-      {/* --- 2. 3-Step “How It Works” Section --- */}
-      <section className="py-24 px-4 sm:px-8 lg:px-16 max-w-6xl mx-auto">
-        <h2 className={`text-4xl font-serif font-bold text-center mb-16 ${ACCENT_COLOR}`}>
-          Your Reading Journey in Three Simple Steps
-        </h2>
-        
-        <div className="grid md:grid-cols-3 gap-12">
-          {/* Step 1: Add */}
-          <motion.div variants={fadeIn} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.4 }} className="text-center space-y-4">
-            <div className="text-5xl mb-4 font-extrabold text-stone-900">1.</div>
-            <Search className="w-10 h-10 mx-auto text-blue-500" />
-            <h3 className="text-2xl font-semibold">Discover & Collect</h3>
-            <p className="text-stone-600">Quickly add any book using our Open Library search or by entering details manually.</p>
-          </motion.div>
-
-          {/* Step 2: Track */}
-          <motion.div variants={fadeIn} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.4 }} transition={{ delay: 0.1 }} className="text-center space-y-4">
-            <div className="text-5xl mb-4 font-extrabold text-stone-900">2.</div>
-            <BookOpen className="w-10 h-10 mx-auto text-green-500" />
-            <h3 className="text-2xl font-semibold">Reflect & Document</h3>
-            <p className="text-stone-600">Track your status (Reading, Finished, Want), and capture private notes and deep reflections.</p>
-          </motion.div>
-
-          {/* Step 3: Share */}
-          <motion.div variants={fadeIn} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.4 }} transition={{ delay: 0.2 }} className="text-center space-y-4">
-            <div className="text-5xl mb-4 font-extrabold text-stone-900">3.</div>
-            <Share2 className="w-10 h-10 mx-auto text-pink-500" />
-            <h3 className="text-2xl font-semibold">Share Your Gallery</h3>
-            <p className="text-stone-600">Generate a beautiful public link to showcase your thoughtfully curated bookshelf to the world.</p>
-          </motion.div>
-        </div>
-      </section>
-
-      <hr className="w-full border-t border-stone-200" />
 
       {/* --- 3. Featured Books Preview (Simplified to avoid complex carousel logic) --- */}
       <section className="py-24 px-4 sm:px-8 lg:px-16 max-w-7xl mx-auto w-full">
@@ -175,74 +163,321 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <hr className="w-full border-t border-stone-200" />
+      {/* --- STORY SECTION (Why This Exists) --- */}
+      <section className="py-28 px-6 max-w-4xl mx-auto text-center fade-in-section">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.8 }}
+          className="text-5xl font-serif font-bold text-white mb-8">
+            Because books shape us.
+        </motion.h2>
 
-      {/* --- 4. “Why This Matters” Emotional Section --- */}
-      <section className="py-32 px-4 sm:px-8 lg:px-16 max-w-5xl mx-auto text-center">
-        <h2 className="text-5xl font-serif font-bold tracking-wide mb-10">
-          Reading is not just consumption; it is creation.
-        </h2>
-        <motion.p 
-          initial={{ opacity: 0 }} 
-          whileInView={{ opacity: 1 }} 
-          viewport={{ once: true, amount: 0.5 }} 
-          transition={{ duration: 1, delay: 0.4 }}
-          className="text-2xl text-stone-700 leading-relaxed max-w-3xl mx-auto"
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.9, delay: 0.15 }}
+          className="text-white/70 text-lg leading-relaxed"
         >
-          Your collection is a mirror of your curiosity. Your notes are the conversation you have with genius. **The Book Gallery** is simply the quiet space where these meaningful moments are preserved and remembered.
+          I realized I was changing from the books I read — in quiet, subtle ways.
+          But when I tried to look back, to remember who I had been, and who I was
+          becoming, the details faded.
+          <br /><br />
+          I wanted a place to keep the stories that shaped me.
+          Not a social feed. Not a list of ratings.
+          Just a calm, personal room for the books that stayed with me.
         </motion.p>
+        <div className="mx-auto mt-16 h-px w-32 bg-stone-300/40" />
       </section>
 
-      <hr className="w-full border-t border-stone-200" />
 
-      {/* --- 5. Feature Grid Section --- */}
-      <section className="py-24 px-4 sm:px-8 lg:px-16 max-w-6xl mx-auto">
-        <h2 className="text-4xl font-serif font-bold text-center mb-12">
+      {/* --- PARALLAX HERO (Cinematic Identity) --- */}
+      <section className="relative h-[90vh] w-full overflow-hidden">
+
+        {/* Background (Parallax Fixed Layer) */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: "url('/library-bg.png')",
+            backgroundAttachment: "fixed"
+          }}
+        />
+
+        {/* Dark vignette overlay */}
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+
+        {/* Foreground Glass Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center h-full px-6">
+          
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: "easeOut" }}
+            className="text-4xl sm:text-6xl font-serif font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] mb-6"
+          >
+            Show Who You Are <br /> By What You Read.
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.9 }}
+            className="text-lg sm:text-2xl text-white/80 max-w-3xl drop-shadow"
+          >
+            A shareable, personal, beautifully displayed bookshelf — 
+            created from the books that shaped you.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35, duration: 0.9 }}
+            className="mt-10 flex gap-4"
+          >
+            <Link href="/signup">
+              <Button className="bg-white/20 backdrop-blur-lg border border-white/30 text-white hover:bg-white/30 px-8 py-6 text-lg rounded-xl transition-all">
+                Create Your Library
+              </Button>
+            </Link>
+
+            <Link href="/demoGallery">
+              <Button variant="outline" className="border-white/30 text-white hover:bg-white/20 px-8 py-6 text-lg rounded-xl transition-all">
+                View Demo Gallery
+              </Button>
+            </Link>
+          </motion.div>
+
+        </div>
+      </section>
+
+
+      {/* --- 4. Showcase Preview Section --- */}
+      <section className="relative py-32 px-6 sm:px-12 lg:px-20 overflow-hidden">
+
+        {/* Background — Dark Library Shelves */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-40 blur-[2px]"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1519682577862-22b62b24e493?q=80&w=2000&auto=format&fit=crop')"
+          }}
+        />
+
+        {/* Soft vignette fade */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/70"></div>
+
+        <div className="relative max-w-6xl mx-auto text-center">
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            className="text-4xl sm:text-5xl font-serif font-bold text-white mb-8"
+          >
+            A Bookshelf Worth Sharing.
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ delay: 0.1 }}
+            className="text-lg sm:text-xl text-stone-200 max-w-2xl mx-auto mb-16"
+          >
+            Because books shape who we are — and that story deserves to be seen.
+          </motion.p>
+
+          {/* Glass Showcase Frame */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 30 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative mx-auto max-w-4xl rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl border border-white/15"
+          >
+            {/* ✨ Replace the src below later with your real screenshot */}
+            <img
+              src="https://placehold.co/1600x1000/png?text=Your+Library+Preview"
+              alt="Library Showcase"
+              className="w-full object-cover"
+            />
+            
+            {/* Top Glass Shine */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+          </motion.div>
+
+        </div>
+      </section>
+
+    {/* --- 5. Feature Grid Section (Cinematic Glass) --- */}
+    <section className="relative py-32 px-6 sm:px-12 lg:px-20 overflow-hidden">
+
+      {/* Background shelves */}
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-30"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1528207776546-365bb710ee93?q=80&w=1600&auto=format&fit=crop')"
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80"></div>
+
+      <div className="relative max-w-6xl mx-auto text-center">
+
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          className="text-4xl sm:text-5xl font-serif font-bold text-white mb-10"
+        >
           Features Designed for Readers
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ delay: 0.1 }}
+          className="text-stone-300 text-lg max-w-2xl mx-auto mb-20"
+        >
+          A quiet place to document your journey, honor your growth, and share your bookshelf with intention.
+        </motion.p>
+
+        {/* Feature Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map((feature, index) => (
             <motion.div
               key={index}
-              initial="hidden"
-              whileInView="visible"
-              variants={fadeIn}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="p-6 rounded-2xl backdrop-blur-xl border border-white/15 bg-white/5 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:bg-white/10 hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.5)] transition group"
             >
-              <Card className="p-6 h-full shadow-lg border-stone-300 hover:border-blue-500 transition-colors">
-                <feature.icon className="w-6 h-6 mb-3 text-blue-600" />
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-stone-600 text-sm">{feature.description}</p>
-              </Card>
+              <feature.icon className="w-6 h-6 text-amber-400 mb-4 mx-auto group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl text-white font-medium mb-2">{feature.title}</h3>
+              <p className="text-sm text-stone-300 leading-relaxed">{feature.description}</p>
             </motion.div>
           ))}
         </div>
-      </section>
 
-      <hr className="w-full border-t border-stone-200" />
+      </div>
+    </section>
 
-      {/* --- 6. Final CTA Section --- */}
-      <section className="py-20 px-4 sm:px-8 lg:px-16 max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl font-serif font-bold mb-6">
-          Ready to create your personal reading legacy?
-        </h2>
-        <Link href="/signup" passHref>
-          <Button 
-            size="lg" 
-            className="bg-blue-600 hover:bg-blue-700 text-white text-lg py-7 px-10 transition-colors shadow-2xl"
+
+    {/* --- 6. Why I Built This (Emotional Story Section) --- */}
+    <section className="py-32 px-6 sm:px-12 lg:px-20 max-w-4xl mx-auto text-center">
+
+      <motion.h2
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        className="text-4xl sm:text-5xl font-serif font-bold text-white mb-10"
+      >
+        Why I Built This
+      </motion.h2>
+
+      <motion.p
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ delay: 0.2, duration: 0.7 }}
+        className="text-xl sm:text-2xl text-white/70 leading-relaxed font-light"
+      >
+        I’ve read many books over the years. They’ve shaped the way I think, the way I speak, 
+        the way I see the world. But every time someone asked me, 
+        <span className="italic">“What have you read?”</span> — I didn’t have a way to show the journey.
+      </motion.p>
+
+      <motion.p
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ delay: 0.4, duration: 0.7 }}
+        className="text-xl sm:text-2xl text-white/70 leading-relaxed font-light mt-8"
+      >
+        This space is my answer.
+        A place to remember who I was when I read each book.
+        A place to honor the things that changed me.
+      </motion.p>
+
+    </section>
+
+
+    {/* --- 7. Final CTA / Closing Section --- */}
+    <section className="py-32 px-6 sm:px-12 lg:px-20 text-center">
+      
+      <motion.h2
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        className="text-4xl sm:text-5xl font-serif font-bold text-white mb-8"
+      >
+        Show who you are by what you read.
+      </motion.h2>
+
+      <motion.p
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ delay: 0.2 }}
+        className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-12"
+      >
+        Build a bookshelf that reflects your growth, curiosity, and identity — and share it 
+        with anyone, anywhere.
+      </motion.p>
+
+
+      <motion.div
+        initial={{ opacity: 0, y: 25 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ delay: 0.3 }}
+        className="flex justify-center"
+      >
+        <Link href="/signup">
+          <Button
+            size="lg"
+            className="bg-stone-900 hover:bg-stone-700 text-white text-lg px-10 py-7 rounded-xl shadow-xl transition"
           >
-            Start Your Reading Journey
+            Start Your Library
           </Button>
         </Link>
-      </section>
+      </motion.div>
 
-      {/* --- 7. Footer --- */}
-      <footer className="py-8 border-t border-stone-200 text-center text-sm text-stone-500 bg-stone-100">
-        <div className="max-w-7xl mx-auto px-4">
-          © {new Date().getFullYear()} The Book Gallery. Made for thoughtful readers.
-        </div>
-      </footer>
+    </section>
+
+    {/* --- 8. Footer --- */}
+    <footer className="border-t py-12 px-6 text-center">
+
+      <h3 className="text-lg font-serif text-white mb-3">
+        The Book Gallery
+      </h3>
+
+      <p className="text-sm text-white/70 max-w-md mx-auto mb-6">
+        A quiet place to honor your reading life.
+      </p>
+
+      <nav className="flex justify-center gap-6 text-sm text-white mb-10">
+        <Link href="/demoGallery" className="hover:text-white/80 transition">
+          Demo Gallery
+        </Link>
+        <Link href="/signup" className="hover:text-white/80 transition">
+          Get Started
+        </Link>
+        <Link href="/login" className="hover:text-white/80 transition">
+          Log In
+        </Link>
+      </nav>
+
+      <div className="text-xs text-white/70">
+        © {new Date().getFullYear()} The Book Gallery — Made with love for Readers.
+      </div>
+
+    </footer>
+
     </div>
   );
 }

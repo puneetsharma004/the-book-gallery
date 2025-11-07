@@ -10,7 +10,7 @@ export async function generateMetadata({ params }) {
       title: `${username}'s Book Gallery`,
       description: `View their reading journey 📚`,
       images: [
-        `/api/og/user/${username}`,
+        `/api/og/user/${username}`, // ✅ This hits your OG route.js
       ],
     },
     twitter: {
