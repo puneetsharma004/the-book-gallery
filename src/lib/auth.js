@@ -1,10 +1,10 @@
-// lib/auth.js
 import { supabase } from "./supabase";
 
 export async function getCurrentUser() {
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return null;
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data?.user) return null;
+
+  const user = data.user;
 
   // ✅ Fetch profile
   const { data: profile } = await supabase
@@ -14,8 +14,4 @@ export async function getCurrentUser() {
     .single();
 
   return { ...user, profile };
-}
-
-export async function logout() {
-  await supabase.auth.signOut();
 }

@@ -48,6 +48,8 @@ const cardVariants = {
 };
 
 
+
+
 // --- Component Definition ---
 
 export function BookCard({ book, onDelete, onUpdate, isOpen, onOpenChange }) {
@@ -61,6 +63,7 @@ export function BookCard({ book, onDelete, onUpdate, isOpen, onOpenChange }) {
 
   const { label: statusLabel, className: statusClass } = statusMap[book.status] || statusMap.reading;
   const isFetching = book.isFetching;
+const cover = book.cover_url || book.cover || null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -103,27 +106,33 @@ export function BookCard({ book, onDelete, onUpdate, isOpen, onOpenChange }) {
               </CardHeader>
 
               <CardContent className="space-y-3 flex-1 flex flex-col">
+        
                 {/* Book Cover */}
-                {book.cover && book.cover !== "N/A" && !isFetching ? (
+                {!isFetching && cover ? (
+                <div className="relative group">
                   <img
-                    src={book.cover}
-                    alt={`Cover image for the book: ${book.title}`}
-                    className="w-full h-48 object-cover rounded-md shadow-md"
+                    src={cover}
+                    alt={`Cover of ${book.title}`}
+                    className="w-full h-48 object-cover rounded-md shadow-md transition-transform duration-300 group-hover:scale-[1.04]"
                     loading="lazy"
                   />
-                ) : (
-                  <div 
-                    className="w-full h-48 bg-neutral-100 border border-dashed border-neutral-300 rounded-md flex items-center justify-center text-neutral-500 text-sm"
-                    role="img"
-                    aria-label={`Placeholder: No cover image available for ${book.title}`}
-                  >
-                    {isFetching ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
-                    ) : (
-                        "No cover available"
-                    )}
-                  </div>
-                )}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-md" />
+                </div>
+              ) : (
+                <div className="w-full h-48 rounded-md border border-stone-200 bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center text-stone-400 text-sm">
+                  {isFetching ? (
+                    <Loader2 className="absolute top-3 right-3 h-5 w-5 animate-spin text-amber-600" />
+                  ) : (
+                    <Badge
+                      className={`absolute top-3 right-3 px-2.5 py-1 rounded-md text-xs font-medium shadow-sm ${statusClass}`}
+                    >
+                      {statusLabel}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+
                 
                 <p className="text-sm text-neutral-600 mt-2 line-clamp-1">
                     Notes: {book.notes ? book.notes.split('\n')[0] : 'No notes added.'}
