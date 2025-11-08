@@ -33,8 +33,7 @@ export default function FeaturedBooks() {
               image={book.cover}
               size="lg"
               responsiveSize={{
-                mobile: "xs",
-                tablet: "sm",
+                mobile: "sm",
                 laptop: "md",
                 desktop: "lg",
               }}
