@@ -29,9 +29,9 @@ export default function HeroSection() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-5xl sm:text-6xl font-serif font-bold text-white leading-tight"
         >
-          Show Who You Are
+          Show <br className="block md:hidden"/> Who You Are
           <br />
-          By What You Read.
+          By <br className="block md:hidden"/> What You Read.
         </motion.h1>
 
         <motion.p
