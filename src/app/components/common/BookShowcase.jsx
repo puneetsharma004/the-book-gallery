@@ -1,20 +1,64 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export default function BookShowcase({
   image,
   size = "md",
+  responsiveSize = {},
   blur = false,
   className = "",
 }) {
   const sizeMap = {
+    xs: { w: 80, h: 113 },
     sm: { w: 120, h: 170 },
     md: { w: 180, h: 255 },
     lg: { w: 240, h: 340 },
+    xl: { w: 300, h: 425 },
+    "2xl": { w: 360, h: 510 },
+    "4xl": { w: 480, h: 680 },
   };
 
-  const { w, h } = sizeMap[size] || sizeMap.md;
+  const getSize = (key) => sizeMap[key] || sizeMap.md;
+
+  // Breakpoints — you can tweak as needed
+  const BREAKPOINTS = {
+    mobile: 640, // below sm
+    tablet: 1024, // below lg
+    laptop: 1440, // below xl
+  };
+
+  const [currentSize, setCurrentSize] = useState(size);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+
+      let chosenSize =
+        width < BREAKPOINTS.mobile
+          ? responsiveSize.mobile || size
+          : width < BREAKPOINTS.tablet
+          ? responsiveSize.tablet || responsiveSize.mobile || size
+          : width < BREAKPOINTS.laptop
+          ? responsiveSize.laptop ||
+            responsiveSize.tablet ||
+            responsiveSize.mobile ||
+            size
+          : responsiveSize.desktop ||
+            responsiveSize.laptop ||
+            responsiveSize.tablet ||
+            responsiveSize.mobile ||
+            size;
+
+      setCurrentSize(chosenSize);
+    };
+
+    handleResize(); // Initial
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [responsiveSize, size]);
+
+  const { w, h } = getSize(currentSize);
 
   return (
     <motion.div

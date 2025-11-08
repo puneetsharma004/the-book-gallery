@@ -32,6 +32,12 @@ export default function FeaturedBooks() {
             <BookShowcase
               image={book.cover}
               size="lg"
+              responsiveSize={{
+                mobile: "xs",
+                tablet: "sm",
+                laptop: "md",
+                desktop: "lg",
+              }}
               className="cursor-pointer"
             />
 
