@@ -68,3 +68,19 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.float-book {
+  animation: float 6s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .parallax-bg {
+    background-attachment: scroll !important;
+  }
+}
