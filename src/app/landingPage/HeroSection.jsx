@@ -66,7 +66,7 @@ export default function HeroSection() {
       </div>
 
       {/* Floating Book Covers (converted to CSS animations for performance) */}
-      <div className="absolute inset-0 pointer-events-none hidden sm:block opacity-60">
+      <div className="absolute inset-0 pointer-events-none hidden sm:block opacity-20">
         {HERO_BOOKS.map((book, i) => (
           <img
             key={book.id}
