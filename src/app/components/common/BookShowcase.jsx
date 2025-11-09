@@ -84,7 +84,7 @@ export default function BookShowcase({
     >
       {/* Light reflection layer */}
       <motion.div
-        className="absolute inset-0 opacity-0 bg-gradient-to-b from-white/20 to-transparent"
+        className="absolute inset-0 opacity-0 bg-linear-to-b from-white/20 to-transparent"
         whileHover={{ opacity: 1 }}
         transition={{ duration: 0.25 }}
       />

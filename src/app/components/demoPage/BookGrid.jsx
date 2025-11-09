@@ -1,9 +1,15 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+
 import InteractiveBookShowcase from "../common/InteractiveBookShowcase";
 
-// Chunk array into groups of size n
+// Helper: chunk array into groups of n
 const chunkArray = (array, size) => {
   const chunks = [];
   for (let i = 0; i < array.length; i += size) {
@@ -14,14 +20,53 @@ const chunkArray = (array, size) => {
 
 export default function BookGrid({ books }) {
   const [openBookId, setOpenBookId] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile view
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleToggle = (id) => {
     setOpenBookId((prev) => (prev === id ? null : id));
   };
 
-  // Split books into rows of 3
+  // Split into rows of 3 for desktop
   const bookRows = chunkArray(books, 3);
 
+  // ✅ MOBILE VIEW (Swiper)
+  if (isMobile) {
+    return (
+      <div className="w-full mt-8">
+        <Swiper
+          modules={[Pagination]}
+          spaceBetween={20}
+          slidesPerView={1.15}
+          centeredSlides={true}
+          pagination={{ clickable: true }}
+          className="pb-10"
+        >
+          {books.map((book) => (
+            <SwiperSlide key={book.id} className="flex justify-center">
+              <InteractiveBookShowcase
+                key={book.id}
+                book={book}
+                isOpen={openBookId === book.id}
+                // onToggle={() => handleToggle(book.id)}
+                onBookClick={() => {}}
+                isPublicView={true}
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    );
+  }
+
+  // ✅ DESKTOP VIEW (Framer Motion Grid)
   return (
     <div className="flex flex-col gap-8 mt-10 mx-auto max-w-fit">
       {bookRows.map((row, rowIndex) => (
@@ -36,6 +81,8 @@ export default function BookGrid({ books }) {
               book={book}
               isOpen={openBookId === book.id}
               onToggle={() => handleToggle(book.id)}
+              onBookClick={() => {}}
+              isPublicView={true}
             />
           ))}
         </motion.div>
