@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@import "swiper/css";
+@import "swiper/css/pagination";
+@import "swiper/css/navigation";
+
 .glass {
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(18px);

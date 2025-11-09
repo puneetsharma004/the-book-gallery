@@ -14,5 +14,33 @@ export const DEMO_BOOKS = [
     status: "read",
     notes: "Absolutely epic storytelling. Kvothe's journey feels intensely personal. A masterpiece of fantasy prose. Highly recommend!",
   },
+  {
+    id: 103,
+    title: "The Name of the Wind (The Kingkiller Chronicle)",
+    cover: "https://covers.openlibrary.org/b/id/8254427-L.jpg",
+    status: "read",
+    notes: "Absolutely epic storytelling. Kvothe's journey feels intensely personal. A masterpiece of fantasy prose. Highly recommend!",
+  },
+  {
+    id: 104,
+    title: "The Name of the Wind (The Kingkiller Chronicle)",
+    cover: "https://covers.openlibrary.org/b/id/8254427-L.jpg",
+    status: "read",
+    notes: "Absolutely epic storytelling. Kvothe's journey feels intensely personal. A masterpiece of fantasy prose. Highly recommend!",
+  },
+  {
+    id: 105,
+    title: "The Name of the Wind (The Kingkiller Chronicle)",
+    cover: "https://covers.openlibrary.org/b/id/8254427-L.jpg",
+    status: "read",
+    notes: "Absolutely epic storytelling. Kvothe's journey feels intensely personal. A masterpiece of fantasy prose. Highly recommend!",
+  },
+  {
+    id: 106,
+    title: "The Name of the Wind (The Kingkiller Chronicle)",
+    cover: "https://covers.openlibrary.org/b/id/8254427-L.jpg",
+    status: "read",
+    notes: "Absolutely epic storytelling. Kvothe's journey feels intensely personal. A masterpiece of fantasy prose. Highly recommend!",
+  },
   // ... rest of books
 ];

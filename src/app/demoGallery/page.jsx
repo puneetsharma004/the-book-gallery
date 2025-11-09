@@ -23,7 +23,7 @@ export default function DemoGalleryPage() {
 
   return (
     <main className="relative overflow-hidden bg-linear-to-b from-[#0c0c0d] via-[#121214] to-[#0d0e10] min-h-screen w-full">
-      <div className="relative z-10 max-w-5xl mx-auto py-12 px-6">
+      <div className="relative z-10 max-w-6xl mx-auto py-12 px-6">
         <DemoHeader />
         <FilterSection
           filter={filter}
