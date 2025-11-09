@@ -9,7 +9,9 @@ import ParallaxHero from './landingPage/ParallaxHero.jsx'
 import ShowcasePreview from './landingPage/ShowcasePreview.jsx'
 import FeaturedBooks from './landingPage/FeaturedBooks.jsx'
 
+
 export default function page() {
+
   return (
     <>
     <main className="relative overflow-hidden bg-linear-to-b from-[#0c0c0d] via-[#121214] to-[#0d0e10]">

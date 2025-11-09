@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
@@ -8,6 +8,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 import InteractiveBookShowcase from "../common/InteractiveBookShowcase";
+import MobileBookShowcase from "../common/MobileBookShowcase.jsx";
 
 // Helper: chunk array into groups of n
 const chunkArray = (array, size) => {
@@ -37,6 +38,8 @@ export default function BookGrid({ books }) {
   // Split into rows of 3 for desktop
   const bookRows = chunkArray(books, 3);
 
+  const [openIndex, setOpenIndex] = React.useState(null);
+
   // ✅ MOBILE VIEW (Swiper)
   if (isMobile) {
     return (
@@ -49,14 +52,13 @@ export default function BookGrid({ books }) {
           pagination={{ clickable: true }}
           className="pb-10"
         >
-          {books.map((book) => (
+          {books.map((book, i) => (
             <SwiperSlide key={book.id} className="flex justify-center">
-              <InteractiveBookShowcase
-                key={book.id}
+              <MobileBookShowcase
                 book={book}
-                isOpen={openBookId === book.id}
-                // onToggle={() => handleToggle(book.id)}
-                onBookClick={() => {}}
+                isOpen={openIndex === i}
+                onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+                onBookClick={() => console.log("Edit", book)}
                 isPublicView={true}
               />
             </SwiperSlide>

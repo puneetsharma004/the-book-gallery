@@ -88,3 +88,13 @@
     background-attachment: scroll !important;
   }
 }
+
+/* Override Swiper default bullet color */
+.swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.6) !important; /* Default bullet color */
+  opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #ffffff !important; /* Active bullet color */
+}
