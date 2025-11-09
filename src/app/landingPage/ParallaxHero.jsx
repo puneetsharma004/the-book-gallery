@@ -42,7 +42,7 @@ export default function ParallaxHero() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white leading-tight tracking-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)] mb-6 sm:mb-8 max-w-4xl"
+          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white leading-tight tracking-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)] mb-6 sm:mb-8 max-w-4xl"
         >
           Show Who You Are <br className="hidden sm:block" /> By What You Read.
         </motion.h1>

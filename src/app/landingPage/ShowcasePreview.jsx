@@ -76,7 +76,7 @@ export default function ShowcasePreview() {
               className="w-full max-h-[600px] sm:max-h-[700px] lg:max-h-[800px] object-contain mx-auto"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent pointer-events-none" />
           </motion.div>
         </div>
       </div>

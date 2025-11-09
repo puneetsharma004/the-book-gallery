@@ -13,7 +13,7 @@ const FEATURED_BOOKS = [
 export default function FeaturedBooks() {
   return (
     <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-8 lg:px-16 max-w-7xl mx-auto w-full">
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-center mb-8 sm:mb-10 md:mb-12 text-white">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-center mb-8 sm:mb-10 md:mb-12 text-white">
         Your Reading, Beautifully Presented
       </h2>
 
@@ -41,10 +41,10 @@ export default function FeaturedBooks() {
 
             {/* 📚 Title and Author below */}
             <div className="mt-3 sm:mt-4 px-2">
-              <h3 className="text-white font-medium text-sm sm:text-base md:text-lg group-hover:text-gray-300 transition-colors duration-300 line-clamp-2">
+              <h3 className="text-white font-medium text-base sm:text-lg md:text-xl group-hover:text-gray-300 transition-colors duration-300 line-clamp-2">
                 {book.title}
               </h3>
-              <p className="text-xs sm:text-sm text-gray-400 mt-1 truncate">
+              <p className="text-sm sm:text-base md:text-lg text-gray-400 mt-1 truncate">
                 {book.author}
               </p>
             </div>

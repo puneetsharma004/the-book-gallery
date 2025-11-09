@@ -35,7 +35,7 @@ export default function FeatureGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ delay: 0.1 }}
-          className="text-stone-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-10 sm:mb-12 md:mb-16 lg:mb-20 px-4"
+          className="text-stone-300 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 sm:mb-12 md:mb-16 lg:mb-20 px-4"
         >
           A quiet place to document your journey, honor your growth, and share your bookshelf with intention.
         </motion.p>
@@ -55,7 +55,7 @@ export default function FeatureGrid() {
               <h3 className="text-base sm:text-lg md:text-xl text-white font-medium mb-1.5 sm:mb-2">
                 {feature.title}
               </h3>
-              <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg text-stone-300 leading-relaxed">
                 {feature.description}
               </p>
             </motion.div>

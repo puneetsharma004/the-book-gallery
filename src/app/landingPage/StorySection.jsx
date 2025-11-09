@@ -23,7 +23,7 @@ export default function StorySection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.9, delay: 0.15 }}
-        className="text-white/70 text-sm sm:text-base md:text-lg leading-relaxed sm:leading-relaxed md:leading-loose px-2 max-w-3xl mx-auto"
+        className="text-white/70 text-base sm:text-lg md:text-xl leading-relaxed sm:leading-relaxed md:leading-loose px-2 max-w-3xl mx-auto"
       >
         I realized I was changing from the books I read — in quiet, subtle ways.
         But when I tried to look back, to remember who I had been, and who I was

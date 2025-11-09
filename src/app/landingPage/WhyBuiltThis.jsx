@@ -20,7 +20,7 @@ export default function WhyBuiltThis() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ delay: 0.2, duration: 0.7 }}
-        className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/70 leading-relaxed sm:leading-relaxed md:leading-loose font-light px-2 max-w-3xl mx-auto"
+        className="text-base sm:text-lg md:text-xl text-white/70 leading-relaxed sm:leading-relaxed md:leading-loose font-light px-2 max-w-3xl mx-auto"
       >
         I've read many books over the years. They've shaped the way I think, the way I speak, 
         the way I see the world. But every time someone asked me,{" "}
@@ -32,7 +32,7 @@ export default function WhyBuiltThis() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ delay: 0.4, duration: 0.7 }}
-        className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/70 leading-relaxed sm:leading-relaxed md:leading-loose font-light mt-6 sm:mt-8 px-2 max-w-3xl mx-auto"
+        className="text-base sm:text-lg md:text-xl text-white/70 leading-relaxed sm:leading-relaxed md:leading-loose font-light mt-6 sm:mt-8 px-2 max-w-3xl mx-auto"
       >
         This space is my answer —  
         a place to remember who I was when I read each book,  
