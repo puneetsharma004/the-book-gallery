@@ -31,7 +31,7 @@ export default function ParallaxHero() {
           backgroundAttachment: "fixed",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
+      <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/30 to-black/70" />
       {/* Foreground Content with Scroll Transforms */}
       <motion.div 
         style={{ scale, opacity }}
@@ -42,7 +42,7 @@ export default function ParallaxHero() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="text-2xl sm:text-4xl lg:text-6xl font-serif font-bold text-white leading-tight tracking-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)] mb-8"
+          className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white leading-tight tracking-tight drop-shadow-[0_3px_10px_rgba(0,0,0,0.4)] mb-6 sm:mb-8 max-w-4xl"
         >
           Show Who You Are <br className="hidden sm:block" /> By What You Read.
         </motion.h1>
@@ -52,7 +52,7 @@ export default function ParallaxHero() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ delay: 0.2, duration: 1 }}
-          className="text-lg sm:text-xl text-white/80 max-w-3xl drop-shadow-md font-light leading-relaxed"
+          className="text-base sm:text-lg md:text-xl text-white/80 max-w-3xl drop-shadow-md font-light leading-relaxed px-4"
         >
           Build a bookshelf that reflects your curiosity, growth, and <br /> story — beautifully displayed for the world to see.
         </motion.p>
@@ -62,18 +62,18 @@ export default function ParallaxHero() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ delay: 0.4, duration: 1 }}
-          className="mt-12 flex flex-wrap justify-center gap-5"
+          className="mt-8 sm:mt-10 md:mt-12 flex flex-col sm:flex-row justify-center gap-3 sm:gap-5 w-full max-w-lg sm:max-w-none px-2"
         >
-          <Link href="/signup">
-            <Button className="bg-white/15 backdrop-blur-lg border border-white/30 text-white hover:bg-white/25 px-10 py-6 text-lg rounded-xl transition-all cursor-pointer">
+          <Link href="/signup" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto bg-white/15 backdrop-blur-lg border border-white/30 text-white hover:bg-white/25 px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg rounded-xl transition-all cursor-pointer font-medium active:scale-95">
               Create Your Library
             </Button>
           </Link>
 
-          <Link href="/demoGallery">
+          <Link href="/demoGallery" className="w-full sm:w-auto">
             <Button 
               variant="outline" 
-              className="border-white/30 text-white hover:bg-white/20 px-10 py-6 text-lg rounded-xl transition-all backdrop-blur-2xl cursor-pointer"
+              className="w-full sm:w-auto border-white/30 text-white hover:bg-white/20 px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg rounded-xl transition-all backdrop-blur-2xl cursor-pointer font-medium active:scale-95"
             >
               View Demo Gallery
             </Button>

@@ -10,7 +10,6 @@ const container = {
     opacity: 1,
     y: 0,
     transition: {
-      // Small delay to let hydration finish, then stagger children
       delay: 0.12,
       when: "beforeChildren",
       staggerChildren: 0.08,
@@ -25,8 +24,7 @@ const child = {
 
 export default function FinalCTA() {
   return (
-    <section className="py-12 px-6 sm:px-12 lg:px-20 text-center">
-      {/* ONE motion container - viewport once prevents re-triggering */}
+    <section className="py-12 sm:py-16 md:py-20 lg:py-24 px-4 sm:px-6 md:px-12 lg:px-20 text-center">
       <motion.div
         variants={container}
         initial="hidden"
@@ -37,7 +35,7 @@ export default function FinalCTA() {
         {/* Heading */}
         <motion.h2
           variants={child}
-          className="text-4xl sm:text-5xl font-serif font-bold text-white mb-8"
+          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-6 sm:mb-8 px-2"
         >
           Show who you are by what you read.
         </motion.h2>
@@ -45,36 +43,38 @@ export default function FinalCTA() {
         {/* Intro paragraph */}
         <motion.p
           variants={child}
-          className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto mb-12"
+          className="text-base sm:text-lg md:text-xl text-white/70 max-w-2xl mx-auto mb-8 sm:mb-10 md:mb-12 px-4"
         >
           Build a bookshelf that reflects your growth, curiosity, and identity — and
           share it with anyone, anywhere.
         </motion.p>
 
         {/* Gita verse block */}
-        <motion.div variants={child} className="max-w-2xl mx-auto mb-14">
-          <div className="w-20 h-[2px] bg-gradient-to-r from-amber-400 to-yellow-600 mx-auto mb-6" />
+        <motion.div variants={child} className="max-w-2xl mx-auto mb-10 sm:mb-12 md:mb-14 px-4">
+          <div className="w-16 sm:w-20 h-0.5 bg-linear-to-r from-amber-400 to-yellow-600 mx-auto mb-4 sm:mb-6" />
 
-          <p className="text-xl sm:text-2xl text-amber-100 font-serif leading-relaxed mb-3">
-            “न हि ज्ञानेन सदृशं पवित्रमिह विद्यते।” 
+          <p className="text-lg sm:text-xl md:text-2xl text-amber-100 font-serif leading-relaxed mb-2 sm:mb-3">
+            "न हि ज्ञानेन सदृशं पवित्रमिह विद्यते।" 
           </p>
 
-          <p className="text-white/60 italic text-lg mb-2">— Bhagavad Gītā 4.38</p>
+          <p className="text-white/60 italic text-sm sm:text-base md:text-lg mb-2">
+            — Bhagavad Gītā 4.38
+          </p>
 
           <motion.p
             variants={child}
-            className="text-white/80 text-lg sm:text-xl font-light max-w-xl mx-auto leading-relaxed"
+            className="text-white/80 text-sm sm:text-base md:text-lg lg:text-xl font-light max-w-xl mx-auto leading-relaxed"
           >
-            <span className="text-amber-200">“There is no purifier like knowledge —”</span>{" "}
+            <span className="text-amber-200">"There is no purifier like knowledge —"</span>{" "}
             it refines the soul, awakens the mind, and reveals the light we already
             carry within.
           </motion.p>
         </motion.div>
 
-        {/* CTA Buttons */}
-        <motion.div variants={child} className="flex justify-center">
-          <Link href="/signup">
-            <Button className="px-8 py-6 text-lg bg-white text-black hover:bg-white/80 rounded-full cursor-pointer">
+        {/* CTA Button */}
+        <motion.div variants={child} className="flex justify-center px-4">
+          <Link href="/signup" className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg bg-white text-black hover:bg-white/80 rounded-full cursor-pointer font-medium shadow-lg hover:shadow-xl transition-all active:scale-95">
               Create Your Library
             </Button>
           </Link>

@@ -36,7 +36,7 @@ export default function ShowcasePreview() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
-          className="text-4xl sm:text-5xl font-serif font-bold text-white mb-8"
+          className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-6 sm:mb-8 px-4"
         >
           A Bookshelf Worth Sharing.
         </motion.h2>
@@ -46,7 +46,7 @@ export default function ShowcasePreview() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ delay: 0.1 }}
-          className="text-lg sm:text-xl text-stone-200 max-w-2xl mx-auto mb-16"
+          className="text-base sm:text-lg md:text-xl text-stone-200 max-w-2xl mx-auto mb-10 sm:mb-12 md:mb-16 px-4"
         >
           Because books shape who we are — and that story deserves to be seen.
         </motion.p>
