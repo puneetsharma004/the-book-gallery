@@ -1,8 +1,10 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Share2, Pencil, Zap, Heart } from "lucide-react";
 
+// Move static data outside component
 const FEATURES = [
   { icon: Share2, title: "Public Gallery", description: "Curate and share your reading profile with a beautiful, custom link." },
   { icon: Pencil, title: "Private Notes", description: "Write down reflections, quotes, and thoughts that are meaningful only to you." },
@@ -10,10 +12,9 @@ const FEATURES = [
   { icon: Heart, title: "Quote Highlights", description: "Capture and categorize your favorite passages for easy lookup later." },
 ];
 
-export default function FeatureGrid() {
+const FeatureGrid = memo(() => {
   return (
     <section className="relative py-16 sm:py-20 md:py-24 lg:py-32 px-4 sm:px-6 md:px-12 lg:px-20 overflow-hidden">
-      {/* Soft gradient background */}
       <div
         className="absolute inset-0 bg-cover bg-no-repeat bg-center opacity-30"
         style={{ backgroundImage: "url(/gridLg.png)", transform: "translateZ(0)" }}
@@ -40,15 +41,15 @@ export default function FeatureGrid() {
           A quiet place to document your journey, honor your growth, and share your bookshelf with intention.
         </motion.p>
 
-        {/* Feature grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
           {FEATURES.map((feature, index) => (
             <motion.div
-              key={index}
+              key={feature.title} // Use unique key instead of index
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
+              style={{ willChange: "transform, opacity" }} // GPU acceleration hint
               className="p-5 sm:p-6 rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/15 bg-white/5 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:bg-white/10 hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.5)] transition-all group"
             >
               <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-amber-400 mb-3 sm:mb-4 mx-auto group-hover:scale-110 transition-transform" />
@@ -64,4 +65,8 @@ export default function FeatureGrid() {
       </div>
     </section>
   );
-}
+});
+
+FeatureGrid.displayName = "FeatureGrid";
+
+export default FeatureGrid;
