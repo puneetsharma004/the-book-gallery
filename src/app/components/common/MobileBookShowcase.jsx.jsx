@@ -100,6 +100,7 @@ export default function MobileBookShowcase({
                 size="icon"
                 onClick={(e) => {
                   e.stopPropagation();
+                  //  console.log("Edit button clicked!"); // Debug log
                   onBookClick();
                 }}
                 className="absolute bottom-4 right-4 h-9 w-9 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-lg backdrop-blur-sm"

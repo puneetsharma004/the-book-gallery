@@ -38,7 +38,7 @@ export default function BookGrid({ books }) {
   // Split into rows of 3 for desktop
   const bookRows = chunkArray(books, 3);
 
-  const [openIndex, setOpenIndex] = React.useState(null);
+  const [openIndex, setOpenIndex] = useState(null);
 
   // ✅ MOBILE VIEW (Swiper)
   if (isMobile) {
@@ -58,7 +58,7 @@ export default function BookGrid({ books }) {
                 book={book}
                 isOpen={openIndex === i}
                 onToggle={() => setOpenIndex(openIndex === i ? null : i)}
-                onBookClick={() => console.log("Edit", book)}
+                // onBookClick={() => console.log("Edit", book)}
                 isPublicView={true}
               />
             </SwiperSlide>

@@ -3,6 +3,11 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import InteractiveBookShowcase from "../common/InteractiveBookShowcase";
 import { BookDetailModal } from "./BookDetailModal";
+import MobileBookShowcase from "../common/MobileBookShowcase.jsx";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 
 const chunkArray = (array, size) => {
   const chunks = [];
@@ -17,6 +22,8 @@ export default function BookGrid({ books, onUpdate, onDelete }) {
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chunkSize, setChunkSize] = useState(3);
+  const [isMobile, setIsMobile] = useState(false);
+  
 
   // Responsive chunk sizing: 1 column (mobile), 2 columns (tablet), 3 columns (desktop)
   useEffect(() => {
@@ -46,10 +53,60 @@ export default function BookGrid({ books, onUpdate, onDelete }) {
     setIsModalOpen(true);
   };
 
+
+    // Detect mobile view
+    useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 768);
+      checkMobile();
+      window.addEventListener("resize", checkMobile);
+      return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+  
+
   const selectedBook = books.find((b) => b.id === selectedBookId);
 
   const bookRows = chunkArray(books, chunkSize);
 
+  const [openIndex, setOpenIndex] = useState(null);
+  
+    // ✅ MOBILE VIEW (Swiper)
+    if (isMobile) {
+      return (
+        <div className="w-full mt-8">
+          <Swiper
+            modules={[Pagination]}
+            spaceBetween={20}
+            slidesPerView={1.15}
+            centeredSlides={true}
+            pagination={{ clickable: true }}
+            className="pb-10"
+          >
+            {books.map((book, i) => (
+              <SwiperSlide key={book.id} className="flex justify-center">
+                <MobileBookShowcase
+                  book={book}
+                  isOpen={openIndex === i}
+                  onToggle={() => setOpenIndex(openIndex === i ? null : i)}
+                  onBookClick={() => handleBookClick(book)}
+                  isPublicView={false}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+
+                {selectedBook && (
+        <BookDetailModal
+          book={selectedBook}
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onUpdate={onUpdate}
+          onDelete={onDelete}
+        />
+      )}
+        </div>
+      );
+    }
+    
   return (
     <>
       <div className="flex flex-col gap-4 sm:gap-6 md:gap-8 mt-6 sm:mt-8 md:mt-10 mx-auto max-w-fit px-2 sm:px-4">
